@@ -13,9 +13,8 @@ torch.cuda.empty_cache()
 # %%
 # Load optimized positions
 pos_part_loaded = torch.load(
-    "optimized/11_optimized_positions_N30_D_area17500_iter5000_adam.pt"
+    "optimized/17_Si@TiO2_640nm_optimized_positions_N30_D_area17500_iter3000_adam.pt"
 )
-
 geo_part = pos_part_loaded
 z0_metasurface = 0
 pos_part = torch.ones((len(pos_part_loaded), 3)) * z0_metasurface
@@ -24,7 +23,7 @@ pos_part[:, 0:2] = pos_part_loaded
 print("Loaded positions:", geo_part.shape)
 
 # %%
-wavelengths = torch.tensor([700.0])
+wavelengths = torch.tensor([640.0])
 
 calc_zone = wavelengths[
     0
@@ -98,10 +97,14 @@ env = tg.env.freespace_3d.EnvHomogeneous3D(env_material=1.0)
 e_inc_list = [tg.env.freespace_3d.PlaneWave(e0p=1.0, e0s=0.0, inc_angle=torch.pi)]
 
 #  structure: Mie-theory based particle
-r_core = 100.0  # nm
-d_shell = 30.0  # nm
-mat_core = tg.materials.MatDatabase("Au")
-mat_shell = tg.materials.MatDatabase("sio2")
+# r_core = 100.0  # nm
+# d_shell = 30.0  # nm
+# mat_core = tg.materials.MatDatabase("Au")
+# mat_shell = tg.materials.MatDatabase("sio2")
+r_core = 56.0  # nm
+d_shell = 57.0  # nm
+mat_core = tg.materials.MatDatabase("Si")
+mat_shell = tg.materials.MatDatabase("TiO2")
 struct_alpha = tg.struct3d.StructMieSphereEffPola3D(
     wavelengths=wavelengths,
     radii=[r_core, r_core + d_shell],
@@ -173,16 +176,56 @@ plt.show()
 # %%
 # compare the efficiency
 
-plt.figure(figsize=(4, 5))
-plt.bar(["Ideal Lens", "Baseline Optimized"], [100, Eff], color=["gray", "blue"])
-plt.ylabel("Relative Efficiency (%)")
-plt.ylim(0, 110)
-plt.title("Efficiency Comparison")
-plt.show()
+# plt.figure(figsize=(4, 5))
+# plt.bar(["Ideal Lens", "Baseline Optimized"], [100, Eff], color=["gray", "blue"])
+# plt.ylabel("Relative Efficiency (%)")
+# plt.ylim(0, 110)
+# plt.title("Efficiency Comparison")
+# plt.show()
 
+# Eff_new = [20.87, 32.27]
+eff_values = [20.87, 32.27]  # Heights of the bars
+
+labels = ["opt lens at λ=700 nm", "opt lens at λ=640 nm"]
+# Plot the bar chart
+plt.bar(
+    labels,  # x-axis labels
+    eff_values,  # Heights of the bars
+    color=["tab:blue", "tab:orange"],  # Colors for each bar
+)
+
+# Add values on top of each bar
+for i, value in enumerate(eff_values):
+    plt.text(i, value + 2, f"{value:.2f}%", ha="center", va="bottom", fontsize=10)
+
+plt.ylabel("Relative Efficiency (%) to ideal lens")
+plt.ylim(0, 110)  # Adjusted to ensure space for text above bars
+plt.title("Efficiency Comparison of Si@TiO2")
+plt.show()
 # %%
 I_Ideal_lens.shape
 # %%
 I_lens.shape
+
+
+# %%
+def nearest_neighbor_distance(r_pos):
+    diffs = r_pos.unsqueeze(1) - r_pos.unsqueeze(0)
+    dists = torch.sqrt((diffs**2).sum(dim=-1) + 1e-9)
+
+    # Ignore self-distances
+    mask = torch.eye(len(r_pos), device=r_pos.device)
+    dists = dists + mask * 1e6
+
+    # Take the closest neighbor for each particle
+    nearest_distances, _ = torch.min(dists, dim=1)
+    return nearest_distances.mean(), nearest_distances
+
+
+# Example usage:
+mean_nn_dist, all_nn_distances = nearest_neighbor_distance(pos_part)
+print("Average nearest-neighbor distance:", mean_nn_dist.item(), "nm")
+print("Min nearest-neighbor distance:", all_nn_distances.min().item(), "nm")
+print("Max nearest-neighbor distance:", all_nn_distances.max().item(), "nm")
 
 # %%

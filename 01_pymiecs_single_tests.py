@@ -13,8 +13,8 @@ import pymiecs as mie
 wavelengths = np.linspace(400, 900, 300)  # wavelength in nm
 k0 = 2 * np.pi / wavelengths
 
-r_core = 90.0
-d_shell = 50
+r_core = 100.0
+d_shell = 30
 r_shell = r_core + d_shell
 
 n_env = 1

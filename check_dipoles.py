@@ -11,11 +11,11 @@ import matplotlib.pyplot as plt
 wavelengths = np.linspace(400, 900, 100)  # wavelength in nm
 k0 = 2 * np.pi / wavelengths
 
-r_core = 100.0
-r_shell = r_core + 30.0
+r_core = 56.0
+r_shell = r_core + 57.0
 n_env = 1
-mat_core = mie.materials.MaterialDatabase("Au")
-mat_shell = mie.materials.MaterialDatabase("SiO2")
+mat_core = mie.materials.MaterialDatabase("Si")
+mat_shell = mie.materials.MaterialDatabase("TiO2")
 n_core = mat_core.get_refindex(wavelength=wavelengths)
 n_shell = mat_shell.get_refindex(wavelength=wavelengths)
 
@@ -57,30 +57,51 @@ plt.figure(figsize=(10, 4))
 
 plt.subplot(121)
 for i, spec in enumerate(a):
-    plt.plot(wavelengths, spec.real, label=f"Re(a_{i+1})", color=colors_blue[i])
-for i, spec in enumerate(b):
-    plt.plot(wavelengths, spec.real, label=f"Re(b_{i+1})", color=colors_red[i])
+    plt.plot(
+        wavelengths, spec.real, label=f"Re(a_{i+1})", color=colors_blue[i], linewidth=4
+    )
 plt.legend(ncol=2)
 plt.xlabel("wavelength (nm)")
 
 plt.subplot(122)
-for i, spec in enumerate(a):
-    plt.plot(wavelengths, spec.imag, label=f"Im(a_{i+1})", color=colors_blue[i])
 for i, spec in enumerate(b):
-    plt.plot(wavelengths, spec.imag, label=f"Im(b_{i+1})", color=colors_red[i])
+    plt.plot(
+        wavelengths, spec.real, label=f"Re(b_{i+1})", color=colors_red[i], linewidth=4
+    )
 plt.legend(ncol=2)
 plt.xlabel("wavelength (nm)")
-plt.tight_layout()
-plt.show()
+
+# plt.subplot(122)
+# for i, spec in enumerate(a):
+#     plt.plot(
+#         wavelengths, spec.imag, label=f"Im(a_{i+1})", color=colors_blue[i], linewidth=4
+#     )
+# for i, spec in enumerate(b):
+#     plt.plot(
+#         wavelengths, spec.imag, label=f"Im(b_{i+1})", color=colors_red[i], linewidth=4
+#     )
+# plt.legend(ncol=2)
+# plt.xlabel("wavelength (nm)")
+# plt.tight_layout()
+# plt.show()
 
 
 # %%
+a.imag[0].shape
+
+# %%
+a.real[0]
+
+
+# %%
+wavelengths.shape
+
+# %%
 plt.figure()
-plt.plot(wavelengths, np.angle(a[0]), label="Phase shift of $a_1$")
+plt.plot(wavelengths, np.angle(a[0]), label="Phase of $a_1$")
 plt.xlabel("Wavelength (nm)")
 plt.ylabel("Phase (rad)")
-plt.title("Scattering Phase Shift: Dipole Term $a_1$")
-# plt.grid(True)
+plt.title("Phase Shift: $a_1$")
 plt.legend()
 plt.tight_layout()
 plt.show()

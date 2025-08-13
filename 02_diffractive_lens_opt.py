@@ -35,10 +35,14 @@ wavelengths = torch.tensor([700.0])
 e_inc_list = [tg.env.freespace_3d.PlaneWave(e0p=1.0, e0s=0.0, inc_angle=torch.pi)]
 
 #  structure: Mie-theory based particle
-r_core = 100.0  # nm
-d_shell = 30.0  # nm
-mat_core = tg.materials.MatDatabase("Au")
-mat_shell = tg.materials.MatDatabase("sio2")
+# r_core = 100.0  # nm
+# d_shell = 30.0  # nm
+# mat_core = tg.materials.MatDatabase("Au")
+# mat_shell = tg.materials.MatDatabase("sio2")
+r_core = 56.0  # nm
+d_shell = 57.0  # nm
+mat_core = tg.materials.MatDatabase("Si")
+mat_shell = tg.materials.MatDatabase("TiO2")
 struct_alpha = tg.struct3d.StructMieSphereEffPola3D(
     wavelengths=wavelengths,
     radii=[r_core, r_core + d_shell],
@@ -99,8 +103,8 @@ def func(r_pos, r_target, struct_alpha, env, e_inc_list, wavelength, z0=0):
 # initialize geometry: uniform grid
 # Note: it's required to specify the device before setting `require_grad``
 z0_metasurface = 0
-N_particles = 25  # construct grid of N x N particles
-D_area = 1.5 * wavelengths[0] * N_particles
+N_particles = 30  # construct grid of N x N particles
+D_area = 1.0 * wavelengths[0] * 25
 z_focus = -D_area  # for the test: use focal distance == lens size
 
 # optimization target
@@ -123,7 +127,7 @@ optimizer = torch.optim.Adam([geo_pos], lr=10)
 # run the optimization loop
 # -------------------------
 
-for i in tg.tqdm(range(50)):
+for i in tg.tqdm(range(500)):
     optimizer.zero_grad()
 
     # evaluate fitness: maximize intensity at focal pos.
@@ -208,7 +212,28 @@ print("Max nearest-neighbor distance:", all_nn_distances.max().item(), "nm")
 geo_pos.data
 # %%
 # save the geo optimization
-torch.save(geo_pos.detach().cpu(), "optimized/optimized_positions.pt")
+torch.save(
+    geo_pos.detach().cpu(), "optimized/01_optimized_positions_unimprove_fitness.pt"
+)
 
 
+# %%
+# laod data
+pos_part_loaded = torch.load("optimized/01_optimized_positions_unimprove_fitness.pt")
+
+geo_part = pos_part_loaded
+z0_metasurface = 0
+pos_part = torch.ones((len(pos_part_loaded), 3)) * z0_metasurface
+pos_part[:, 0:2] = pos_part_loaded
+
+print("Loaded positions:", geo_part.shape)
+# Rebuild simulation
+sim = tg.simulation.Simulation(
+    structures=[struct_alpha.copy(pos_part)],
+    environment=env,
+    illumination_fields=e_inc_list,
+    wavelengths=[wavelengths],
+    device=torch.device("cuda"),
+)
+sim.run()
 # %%
